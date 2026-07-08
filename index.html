@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="4-7-8 호흡">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0d1b2a">
+<title>4-7-8 호흡법</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  html, body { height: 100%; overscroll-behavior: none; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    background: linear-gradient(180deg, #0d1b2a 0%, #1b263b 60%, #16213a 100%);
+    color: #e8eef5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 100vh;   /* 구형 브라우저 폴백 */
+    min-height: 100dvh;  /* iOS Safari·Chrome 최신 */
+    padding: max(20px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+    user-select: none;
+    -webkit-user-select: none;
+    text-align: center;
+  }
+  header { padding-top: 4px; }
+  h1 { font-size: 1.35rem; font-weight: 700; letter-spacing: 0.06em; }
+  h1 .nums { color: #7fd8be; }
+  .subtitle { font-size: 0.8rem; color: #8fa3b8; margin-top: 6px; line-height: 1.5; }
+
+  /* ---- breathing circle ---- */
+  .stage {
+    position: relative;
+    width: min(72vw, 300px);
+    height: min(72vw, 300px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 10px 0;
+  }
+  .ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1.5px dashed rgba(127, 216, 190, 0.25);
+  }
+  .circle {
+    position: absolute;
+    width: 52%;
+    height: 52%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #9be8d0, #4ea88c 55%, #2e6e5c);
+    box-shadow: 0 0 60px rgba(127, 216, 190, 0.35);
+    transform: scale(0.72);
+    transition: transform 0.3s ease;
+    will-change: transform;
+  }
+  .circle.inhale  { transition: transform 4s cubic-bezier(0.35, 0, 0.35, 1); transform: scale(1.28); }
+  .circle.hold    { transition: none; transform: scale(1.28); }
+  .circle.exhale  { transition: transform 8s cubic-bezier(0.35, 0, 0.35, 1); transform: scale(0.72); }
+
+  .center-text {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.45);
+  }
+  .phase-label { font-size: 1.3rem; font-weight: 700; }
+  .count { font-size: 3.2rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .phase-hint { font-size: 0.78rem; color: #dfeee9; opacity: 0.9; max-width: 150px; line-height: 1.4; }
+
+  /* ---- progress dots ---- */
+  .cycles { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: 300px; }
+  .dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.18);
+    transition: background 0.4s, transform 0.4s;
+  }
+  .dot.active { background: #ffd166; transform: scale(1.25); border-color: #ffd166; }
+  .dot.done { background: #7fd8be; border-color: #7fd8be; }
+  .cycle-label { font-size: 0.85rem; color: #a9bccf; margin-top: 8px; }
+  .cycle-label b { color: #ffd166; }
+
+  /* ---- controls ---- */
+  .controls { display: flex; gap: 12px; align-items: center; margin-top: 14px; }
+  button {
+    font-family: inherit;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    font-weight: 700;
+  }
+  #mainBtn {
+    padding: 16px 52px;
+    font-size: 1.15rem;
+    color: #0d1b2a;
+    background: linear-gradient(135deg, #9be8d0, #5fc4a4);
+    box-shadow: 0 6px 20px rgba(127, 216, 190, 0.35);
+    transition: transform 0.15s;
+  }
+  #mainBtn:active { transform: scale(0.96); }
+  #resetBtn {
+    padding: 14px 22px;
+    font-size: 0.95rem;
+    color: #c5d4e3;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .toggles { display: flex; gap: 18px; margin-top: 14px; font-size: 0.82rem; color: #8fa3b8; }
+  .toggles label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .toggles input { accent-color: #7fd8be; width: 17px; height: 17px; }
+
+  footer { font-size: 0.68rem; color: #5d768c; line-height: 1.6; margin-top: 14px; }
+  footer a { color: #7fa5c4; }
+
+  .done-msg {
+    font-size: 1.05rem;
+    color: #ffd166;
+    font-weight: 700;
+    min-height: 1.4em;
+    margin-top: 10px;
+  }
+
+  @media (max-height: 700px) {
+    .stage { width: min(60vw, 240px); height: min(60vw, 240px); margin: 4px 0; }
+    .count { font-size: 2.6rem; }
+    h1 { font-size: 1.15rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span class="nums">4·7·8</span> 호흡법</h1>
+  <div class="subtitle">코로 4초 들이마시고 · 7초 멈추고 · 입으로 8초 내쉬기<br>총 10회 반복</div>
+</header>
+
+<div class="stage">
+  <div class="ring"></div>
+  <div class="circle" id="circle"></div>
+  <div class="center-text">
+    <div class="phase-label" id="phaseLabel">준비</div>
+    <div class="count" id="count">4·7·8</div>
+    <div class="phase-hint" id="phaseHint">시작 버튼을 누르세요</div>
+  </div>
+</div>
+
+<div>
+  <div class="cycles" id="cycles"></div>
+  <div class="cycle-label"><b id="cycleNum">0</b> / 10 회</div>
+  <div class="done-msg" id="doneMsg"></div>
+</div>
+
+<div>
+  <div class="controls">
+    <button id="resetBtn">처음부터</button>
+    <button id="mainBtn">시작</button>
+  </div>
+  <div class="toggles">
+    <label><input type="checkbox" id="soundToggle" checked> 소리 안내</label>
+    <label><input type="checkbox" id="vibeToggle" checked> 진동</label>
+  </div>
+</div>
+
+<footer>
+  배를 부풀리며 코로 들이마시고, 배를 당기며 입으로 "후~" 내쉬세요.<br>
+  출처: 국민건강보험공단 건강보험 웹진 (앤드류 웨일 박사 권장 호흡법)
+</footer>
+
+<script>
+(function () {
+  var TOTAL_CYCLES = 10;
+  var PHASES = [
+    { key: 'inhale', label: '들이마시기', hint: '코로, 배를 부풀리며', secs: 4 },
+    { key: 'hold',   label: '멈추기',     hint: '숨을 참으세요',       secs: 7 },
+    { key: 'exhale', label: '내쉬기',     hint: '입으로 천천히 "후~"', secs: 8 }
+  ];
+
+  var circle = document.getElementById('circle');
+  var phaseLabel = document.getElementById('phaseLabel');
+  var countEl = document.getElementById('count');
+  var phaseHint = document.getElementById('phaseHint');
+  var mainBtn = document.getElementById('mainBtn');
+  var resetBtn = document.getElementById('resetBtn');
+  var cyclesEl = document.getElementById('cycles');
+  var cycleNumEl = document.getElementById('cycleNum');
+  var doneMsg = document.getElementById('doneMsg');
+  var soundToggle = document.getElementById('soundToggle');
+  var vibeToggle = document.getElementById('vibeToggle');
+
+  // build 10 dots
+  var dots = [];
+  for (var i = 0; i < TOTAL_CYCLES; i++) {
+    var d = document.createElement('div');
+    d.className = 'dot';
+    cyclesEl.appendChild(d);
+    dots.push(d);
+  }
+
+  var running = false;
+  var cycle = 0;          // completed cycles
+  var phaseIdx = 0;
+  var secLeft = 0;
+  var timer = null;
+  var audioCtx = null;
+  var wakeLock = null;
+
+  // iOS 17+ : 무음 스위치가 켜져 있어도 소리가 나도록 오디오 세션을 재생 모드로 설정
+  try {
+    if (navigator.audioSession) navigator.audioSession.type = 'playback';
+  } catch (e) {}
+
+  function ensureAudio() {
+    if (!audioCtx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) audioCtx = new AC();
+    }
+    if (audioCtx && audioCtx.state !== 'running') {
+      try { audioCtx.resume(); } catch (e) {}
+    }
+  }
+
+  // iOS Safari: 첫 터치에서 오디오 잠금 해제 (버튼 외 화면 터치도 포함)
+  function unlockAudio() {
+    ensureAudio();
+    if (audioCtx) {
+      try {
+        var buf = audioCtx.createBuffer(1, 1, 22050);
+        var src = audioCtx.createBufferSource();
+        src.buffer = buf;
+        src.connect(audioCtx.destination);
+        src.start(0);
+      } catch (e) {}
+    }
+    document.removeEventListener('touchend', unlockAudio);
+    document.removeEventListener('click', unlockAudio);
+  }
+  document.addEventListener('touchend', unlockAudio);
+  document.addEventListener('click', unlockAudio);
+
+  function beep(freq, dur, vol) {
+    if (!soundToggle.checked || !audioCtx) return;
+    try {
+      var o = audioCtx.createOscillator();
+      var g = audioCtx.createGain();
+      o.type = 'sine';
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0, audioCtx.currentTime);
+      g.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start();
+      o.stop(audioCtx.currentTime + dur + 0.05);
+    } catch (e) {}
+  }
+
+  function vibrate(pattern) {
+    if (vibeToggle.checked && navigator.vibrate) {
+      try { navigator.vibrate(pattern); } catch (e) {}
+    }
+  }
+
+  function requestWake() {
+    if ('wakeLock' in navigator) {
+      navigator.wakeLock.request('screen').then(function (wl) { wakeLock = wl; }).catch(function () {});
+    }
+  }
+  function releaseWake() {
+    if (wakeLock) { wakeLock.release().catch(function () {}); wakeLock = null; }
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') {
+      if (running) requestWake();
+      // 잠금 해제 후 돌아왔을 때 오디오 다시 활성화 (iOS·안드로이드 공통)
+      if (audioCtx && audioCtx.state !== 'running') {
+        try { audioCtx.resume(); } catch (e) {}
+      }
+    }
+  });
+
+  // 진동 미지원 기기(아이폰 등)에서는 진동 옵션을 숨김
+  if (!navigator.vibrate) {
+    vibeToggle.checked = false;
+    vibeToggle.parentNode.style.display = 'none';
+  }
+
+  function phaseSignal(p) {
+    if (p.key === 'inhale') { beep(523, 0.35, 0.25); vibrate(120); }
+    else if (p.key === 'hold') { beep(659, 0.35, 0.22); vibrate([60, 60, 60]); }
+    else { beep(392, 0.6, 0.25); vibrate(250); }
+  }
+
+  function updateDots() {
+    for (var i = 0; i < TOTAL_CYCLES; i++) {
+      dots[i].className = 'dot' + (i < cycle ? ' done' : (i === cycle && running ? ' active' : ''));
+    }
+    cycleNumEl.textContent = Math.min(cycle + (running ? 1 : 0), TOTAL_CYCLES);
+    if (!running && cycle >= TOTAL_CYCLES) cycleNumEl.textContent = TOTAL_CYCLES;
+  }
+
+  function startPhase() {
+    var p = PHASES[phaseIdx];
+    phaseLabel.textContent = p.label;
+    phaseHint.textContent = p.hint;
+    secLeft = p.secs;
+    countEl.textContent = secLeft;
+
+    // circle animation: force reflow so transition restarts cleanly
+    circle.className = 'circle';
+    void circle.offsetWidth;
+    circle.className = 'circle ' + p.key;
+
+    phaseSignal(p);
+
+    timer = setInterval(function () {
+      secLeft--;
+      if (secLeft > 0) {
+        countEl.textContent = secLeft;
+        if (soundToggle.checked) beep(880, 0.06, 0.05); // soft tick
+      } else {
+        clearInterval(timer);
+        timer = null;
+        nextPhase();
+      }
+    }, 1000);
+  }
+
+  function nextPhase() {
+    phaseIdx++;
+    if (phaseIdx >= PHASES.length) {
+      phaseIdx = 0;
+      cycle++;
+      updateDots();
+      if (cycle >= TOTAL_CYCLES) { finish(); return; }
+    }
+    startPhase();
+  }
+
+  function finish() {
+    running = false;
+    clearTimers();
+    releaseWake();
+    circle.className = 'circle';
+    phaseLabel.textContent = '완료!';
+    countEl.textContent = '🎉';
+    phaseHint.textContent = '수고하셨습니다';
+    doneMsg.textContent = '10회 완료! 편안한 밤 되세요 🌙';
+    mainBtn.textContent = '다시 시작';
+    beep(523, 0.25, 0.25);
+    setTimeout(function () { beep(659, 0.25, 0.25); }, 250);
+    setTimeout(function () { beep(784, 0.5, 0.28); }, 500);
+    vibrate([200, 100, 200, 100, 400]);
+    updateDots();
+  }
+
+  function clearTimers() {
+    if (timer) { clearInterval(timer); timer = null; }
+  }
+
+  function start() {
+    ensureAudio();
+    if (cycle >= TOTAL_CYCLES) reset(false);
+    running = true;
+    doneMsg.textContent = '';
+    mainBtn.textContent = '일시정지';
+    requestWake();
+    updateDots();
+    startPhase();
+  }
+
+  function pause() {
+    running = false;
+    clearTimers();
+    releaseWake();
+    // freeze the circle where it is
+    var st = getComputedStyle(circle).transform;
+    circle.className = 'circle';
+    circle.style.transform = st;
+    mainBtn.textContent = '계속';
+    phaseHint.textContent = '일시정지됨';
+  }
+
+  function resume() {
+    ensureAudio();
+    running = true;
+    mainBtn.textContent = '일시정지';
+    requestWake();
+    circle.style.transform = '';
+    updateDots();
+    startPhase(); // restart current phase from the top (simple & predictable)
+  }
+
+  function reset(updateUI) {
+    running = false;
+    clearTimers();
+    releaseWake();
+    cycle = 0; phaseIdx = 0;
+    circle.style.transform = '';
+    circle.className = 'circle';
+    doneMsg.textContent = '';
+    if (updateUI !== false) {
+      phaseLabel.textContent = '준비';
+      countEl.textContent = '4·7·8';
+      phaseHint.textContent = '시작 버튼을 누르세요';
+      mainBtn.textContent = '시작';
+    }
+    updateDots();
+  }
+
+  var pausedMid = false;
+  mainBtn.addEventListener('click', function () {
+    if (running) { pausedMid = true; pause(); }
+    else if (pausedMid && cycle < TOTAL_CYCLES) { pausedMid = false; resume(); }
+    else { pausedMid = false; start(); }
+  });
+  resetBtn.addEventListener('click', function () { pausedMid = false; reset(); });
+
+  updateDots();
+})();
+</script>
+</body>
+</html>
